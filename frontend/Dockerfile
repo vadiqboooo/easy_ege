@@ -3,7 +3,7 @@ FROM node:22-alpine as build
 COPY package.json package.json
 RUN npm install
 COPY . .
-RUN npm run build
+RUN npm run build  -- --emptyOutDir
 
 FROM nginx:stable-alpine
 
