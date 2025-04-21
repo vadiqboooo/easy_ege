@@ -31,5 +31,8 @@
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.4",
     "vite": "^6.2.0"
+  },
+  "scripts": {
+  "build": "NODE_OPTIONS=--max_old_space_size=4096 vite build"
   }
 }
