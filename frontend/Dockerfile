@@ -1,9 +1,9 @@
-FROM node:22-alpine as build
+FROM node:22-alpine AS build
 
 COPY package.json package.json
-RUN npm install
+RUN npm ci --only=production
 COPY . .
-RUN npm run build 
+RUN npm run build && npm cache clean --force
 
 FROM nginx:stable-alpine
 
