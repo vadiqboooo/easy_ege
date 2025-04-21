@@ -1,7 +1,7 @@
 FROM node:22-alpine AS build
 
 COPY package.json package.json
-RUN npm ci --only=production
+RUN npm install
 COPY . .
 RUN npm run build && npm cache clean --force
 
