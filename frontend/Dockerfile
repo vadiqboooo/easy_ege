@@ -3,7 +3,8 @@ FROM node:22 AS build
 COPY package.json package.json
 RUN npm install
 COPY . .
-RUN npm run build && npm cache clean --force
+RUN npm run build 
+RUN npm cache clean --force
 
 FROM nginx:stable-alpine
 
