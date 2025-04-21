@@ -25,3 +25,7 @@ services:
       context: ./frontend
     networks:
       - dev
+    deploy:
+      resources:
+        limits:
+          memory: 1G 
