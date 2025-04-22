@@ -10,7 +10,7 @@ export default defineConfig({
     fastRefresh: true,
   }), tailwindcss()],
   build: {
-    // minify: 'esbuild', // Используем ESBuild для минификации (быстрее terser)
+    minify: 'esbuild', // Используем ESBuild для минификации (быстрее terser)
     sourcemap: false,  // Отключаем sourcemap для продакшена
   },
 })
