@@ -1,5 +1,5 @@
 # Node.js часть
-FROM node:24-alpine as builder
+FROM node:20-alpine as builder
 
 COPY package.json package-lock.json ./
 RUN npm ci
