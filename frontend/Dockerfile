@@ -1,5 +1,5 @@
 FROM node:20-alpine AS builder
-WORKDIR /app
+
 
 # Копируем package.json и lock-файлы
 COPY package.json package-lock.json ./
