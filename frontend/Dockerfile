@@ -1,4 +1,4 @@
-FROM node:23-slim
+FROM node:22-alpine
 
 
 # Копируем package.json и lock-файлы
