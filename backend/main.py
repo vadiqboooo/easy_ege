@@ -124,7 +124,7 @@ class UserStatisticsModel(BaseModel):
 app = FastAPI(title="Python Code Executor API")
 
 # Подключаем папку со статикой
-app.mount("/img", StaticFiles(directory="backend/img"), name="img")
+app.mount("/img", StaticFiles(directory="/img"), name="img")
 
 # Настройка CORS
 app.add_middleware(
