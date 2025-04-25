@@ -21,8 +21,8 @@ services:
   backend:
     build: 
       context: ./backend
-      volumes:
-        - ./backend/img:/app/backend/img
+    volumes:
+      - ./backend/img:/app/backend/img
     networks:
       - dev
 
