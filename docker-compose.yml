@@ -9,7 +9,7 @@ services:
       - "443:443"
     volumes:
       - './nginx.conf:/etc/nginx/nginx.conf'
-      - ./certs:/etc/nginx/certs          # Папка с сертификатами
+      - /etc/letsencrypt:/etc/letsencrypt:ro         # Папка с сертификатами
       - ./frontend/dist:/usr/share/nginx/html  # Если фронтенд — статика
     networks:
       - dev
