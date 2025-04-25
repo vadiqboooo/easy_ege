@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.future import select
 from sqlalchemy.sql import func
+from fastapi.staticfiles import StaticFiles
 
 # Инициализация SQLAlchemy
 Base = declarative_base()
@@ -121,6 +122,9 @@ class UserStatisticsModel(BaseModel):
 
 # Инициализация приложения FastAPI
 app = FastAPI(title="Python Code Executor API")
+
+# Подключаем папку со статикой
+app.mount("/img", StaticFiles(directory="backend/img"), name="img")
 
 # Настройка CORS
 app.add_middleware(
