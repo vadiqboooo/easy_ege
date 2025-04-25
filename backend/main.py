@@ -14,6 +14,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.future import select
 from sqlalchemy.sql import func
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 # Инициализация SQLAlchemy
 Base = declarative_base()
@@ -151,7 +152,9 @@ async def initialize_db():
         await conn.run_sync(Base.metadata.create_all)
     
         
-        
+@app.get("/img/{filename}")
+async def get_image(filename: str):
+    return FileResponse(f"backend/img/{filename}")        
 
 # Роуты API
 @app.get("/variants", response_model=List[VariantModel])
