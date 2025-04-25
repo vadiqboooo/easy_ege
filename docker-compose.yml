@@ -8,7 +8,6 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./backend/img:/var/www/backend/img:ro 
       - './nginx.conf:/etc/nginx/nginx.conf'
       - /etc/letsencrypt:/etc/letsencrypt:ro         # Папка с сертификатами
       - ./frontend/dist:/usr/share/nginx/html  # Если фронтенд — статика
@@ -22,6 +21,8 @@ services:
   backend:
     build: 
       context: ./backend
+    volumes:
+      - ./backend/img:/app/backend/img
     networks:
       - dev
 
