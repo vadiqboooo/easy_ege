@@ -135,9 +135,11 @@ class UserStatisticsModel(BaseModel):
         orm_mode = True
 
 async def initialize_db():
+    import os
     """Инициализирует базу данных"""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    print(f"✅ Database created at {os.path.abspath('app.db')}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
