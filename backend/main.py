@@ -150,7 +150,9 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 # Инициализация приложения FastAPI
-app = FastAPI(title="Python Code Executor API", lifespan=lifespan)
+app = FastAPI(title="Python Code Executor API",
+            lifespan=lifespan,
+            openapi_version="3.1.0")
 
 # Подключаем папку со статикой
 app.mount("/img", StaticFiles(directory="/img"), name="img")
