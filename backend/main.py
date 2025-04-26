@@ -134,6 +134,12 @@ class UserStatisticsModel(BaseModel):
     class Config:
         orm_mode = True
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Код при запуске
+    await initialize_db()
+    print("Database initialized")
+
 # Инициализация приложения FastAPI
 app = FastAPI(title="Python Code Executor API", lifespan=lifespan)
 
@@ -417,11 +423,7 @@ async def save_user_results(
     
 #     await db.commit()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Код при запуске
-    await initialize_db()
-    print("Database initialized")
+
 
 if __name__ == "__main__":
     import uvicorn
