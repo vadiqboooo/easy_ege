@@ -3,7 +3,7 @@ import {
   getTasks, 
   check_answer, 
   getUserVariants as fetchUserVariants,
-  saveUserResults
+  saveUserResults as apiSaveUserResults
 } from './api';
 
 // Локальные данные для демонстрации (при отсутствии связи с API)
@@ -69,9 +69,9 @@ export const getUserVariants = async (userId) => {
 };
 
 // Сохранение результатов пользователя
-export const saveResults = async (userId, variantId, taskResults) => {
+export const saveUserResults  = async (userId, variantId, taskResults) => {
   try {
-    return await saveUserResults(userId, variantId, taskResults);
+    return await apiSaveUserResults(userId, variantId, taskResults);
   } catch (error) {
     console.error('Error saving user results:', error);
     return { status: 'error', message: error.message };
