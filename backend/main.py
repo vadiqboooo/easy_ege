@@ -144,6 +144,7 @@ async def lifespan(app: FastAPI):
     # Код при запуске
     await initialize_db()
     print("Database initialized")
+    yield  
 
 # Инициализация приложения FastAPI
 app = FastAPI(title="Python Code Executor API", lifespan=lifespan)
