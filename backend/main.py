@@ -134,6 +134,11 @@ class UserStatisticsModel(BaseModel):
     class Config:
         orm_mode = True
 
+async def initialize_db():
+    """Инициализирует базу данных"""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Код при запуске
@@ -165,10 +170,7 @@ async def get_db():
     async with async_session() as session:
         yield session
 
-async def initialize_db():
-    """Инициализирует базу данных"""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+
     
         
 @app.get("/img/{filename}")
