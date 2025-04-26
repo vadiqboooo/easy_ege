@@ -1,11 +1,13 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { getVariants, getTasksForVariant, check_task } from '../services/taskService';
+import { getVariants, getTasksForVariant, check_task , getUserVariants } from '../services/taskService';
 
 const TaskContext = createContext();
 
 export const useTaskContext = () => useContext(TaskContext);
 
 export const TaskProvider = ({ children }) => {
+
+  const [user, setUser] = useState(null);
   const [variants, setVariants] = useState([]);
   const [currentVariant, setCurrentVariant] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -21,18 +23,61 @@ export const TaskProvider = ({ children }) => {
     incorrectAnswers: 0
   });
 
+  useEffect(() => {
+    const telegramUser = localStorage.getItem('telegramUser');
+    if (telegramUser) {
+      const userData = JSON.parse(telegramUser);
+      setUser(userData);
+    }
+  }, []);
+
   // Загрузка вариантов при инициализации
   useEffect(() => {
     const loadVariants = async () => {
       try {
-        const variantsData = await getVariants();
-        setVariants(variantsData);
+        // Если пользователь авторизован через Telegram, загружаем только его нерешенные варианты
+        if (user) {
+          const variantsData = await getUserVariants(user.id);
+          setVariants(variantsData);
+        } else {
+          // Иначе загружаем все варианты (для тестирования)
+          const variantsData = await getVariants();
+          setVariants(variantsData);
+        }
       } catch (error) {
         console.error('Failed to load variants:', error);
       }
     };
     loadVariants();
-  }, []);
+  }, [user]);
+
+
+
+
+   // Расчет статистики и сохранение результатов
+  const calculateStatistics = async () => {
+    const totalTimeSpent = currentVariant.time_limit * 60 - timeLeft;
+    const completedTasksCount = Object.values(answers).filter(code => code.trim().length > 0).length;
+    let correct;
+    let incorrect;
+    
+    await check_task(currentVariant.id, answers).then(value => {
+      correct = value.filter(x => x == true).length;
+      incorrect = value.filter(x => x == false).length;
+      
+      // Если пользователь авторизован, сохраняем результаты
+      if (user) {
+        saveUserResults(user.id, currentVariant.id, value);
+      }
+    });
+    
+    setStatistics({
+      totalTime: totalTimeSpent,
+      completedTasks: completedTasksCount,
+      correctAnswers: correct,
+      incorrectAnswers: incorrect
+    });
+  };
 
   // Выбор варианта и загрузка задач
   const selectVariant = async (variantId) => {
@@ -108,22 +153,7 @@ export const TaskProvider = ({ children }) => {
   
 
   // Расчет статистики
-  const calculateStatistics = async () => {
-    const totalTimeSpent = currentVariant.time_limit * 60 - timeLeft;
-    const completedTasksCount = Object.values(answers).filter(code => code.trim().length > 0).length;
-    let correct;
-    let incorrect;
-    await check_task(currentVariant.id, answers).then( value => {
-      correct = value.filter(x => x == true).length;
-      incorrect = value.filter(x => x == false).length;
-    })
-    setStatistics({
-      totalTime: totalTimeSpent,
-      completedTasks: completedTasksCount,
-      correctAnswers: correct, // Заполнится после проверки на сервере
-      incorrectAnswers: incorrect // Заполнится после проверки на сервере
-    });
-  };
+
 
   // Завершение варианта досрочно
   const finishVariant = () => {

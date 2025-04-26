@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Depends, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float,ForeignKey, UniqueConstraint
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.future import select
@@ -44,6 +44,19 @@ class Task(Base):
     answer = Column(Integer, nullable=False)
     
     variant = relationship("Variant", back_populates="tasks")
+
+class CompletedVariant(Base):
+    __tablename__ = "completed_variants"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, nullable=False)  # Telegram user ID
+    variant_id = Column(Integer, ForeignKey("variants.id"), nullable=False)
+    completed_at = Column(DateTime, nullable=False, server_default=func.now())
+    
+    # Создаем уникальный индекс для пары user_id и variant_id
+    __table_args__ = (
+        UniqueConstraint('user_id', 'variant_id', name='uq_user_variant'),
+    )
 
 class UserStatistics(Base):
     __tablename__ = "statistics"
@@ -175,6 +188,25 @@ async def get_variant(variant_id: int, db: AsyncSession = Depends(get_db)):
     
     return variant
 
+@app.get("/user/{user_id}/variants", response_model=List[VariantModel])
+async def get_user_variants(user_id: str, db: AsyncSession = Depends(get_db)):
+    """Получает список вариантов, которые пользователь еще не решил"""
+    
+    # Получаем список всех вариантов
+    all_variants = await db.execute(select(Variant))
+    all_variants = all_variants.scalars().all()
+    
+    # Получаем ID вариантов, которые пользователь уже решил
+    completed = await db.execute(
+        select(CompletedVariant.variant_id)
+        .where(CompletedVariant.user_id == user_id)
+    )
+    completed_variants_ids = [row[0] for row in completed]
+    
+    # Фильтруем только нерешенные варианты
+    variants = [v for v in all_variants if v.id not in completed_variants_ids]
+    return variants
+
 @app.post("/check-answers")
 async def chcheck_answers(request: AnswerCheckRequest, db: AsyncSession = Depends(get_db)):
     tasks = await db.execute(select(Task).where(Task.variant_id == request.variant_id))
@@ -242,102 +274,148 @@ async def start_variant(user_id: str = Body(...), variant_id: int = Body(...), d
     if not variant:
         raise HTTPException(status_code=404, detail="Вариант не найден")
     
-    # Создаем запись в статистике
-    stats = UserStatistics(
-        user_id=user_id,
-        variant_id=variant_id,
-        start_time=datetime.now()
-    )
-    db.add(stats)
-    await db.commit()
-    await db.refresh(stats)
+@app.post("/user/{user_id}/results")
+async def save_user_results(
+    user_id: str, 
+    variant_id: int = Body(...), 
+    task_results: Dict[str, bool] = Body(...),
+    db: AsyncSession = Depends(get_db)
+):
+    """Сохраняет результаты пользователя и помечает вариант как решенный"""
     
-    return stats
-
-@app.post("/finish_variant", response_model=UserStatisticsModel)
-async def finish_variant(user_id: str = Body(...), variant_id: int = Body(...), db: AsyncSession = Depends(get_db)):
-    """Завершает вариант для пользователя"""
-    # Получаем текущую статистику
-    result = await db.execute(
-        select(UserStatistics)
-        .where(
-            UserStatistics.user_id == user_id,
-            UserStatistics.variant_id == variant_id,
-            UserStatistics.end_time.is_(None)
-        )
-    )
-    stats = result.scalar()
-    
-    if not stats:
-        raise HTTPException(status_code=404, detail="Активный вариант не найден")
-    
-    # Обновляем статистику
-    now = datetime.now()
-    stats.end_time = now
-    stats.total_time = (now - stats.start_time).total_seconds()
-    await db.commit()
-    await db.refresh(stats)
-    
-    return stats
-
-@app.get("/statistics/{user_id}/{variant_id}", response_model=UserStatisticsModel)
-async def get_statistics(user_id: str, variant_id: int, db: AsyncSession = Depends(get_db)):
-    """Получает статистику пользователя по варианту"""
+    # Находим или создаем статистику пользователя
     result = await db.execute(
         select(UserStatistics)
         .where(
             UserStatistics.user_id == user_id,
             UserStatistics.variant_id == variant_id
         )
-        .order_by(UserStatistics.start_time.desc())
-        .limit(1)
     )
     stats = result.scalar()
     
     if not stats:
-        raise HTTPException(status_code=404, detail="Статистика не найдена")
-    
-    return stats
-
-# Вспомогательные функции
-
-async def update_statistics(db: AsyncSession, user_id: str, variant_id: int, task_id: int, passed: bool):
-    """Обновляет статистику пользователя"""
-    # Получаем текущую статистику
-    result = await db.execute(
-        select(UserStatistics)
-        .where(
-            UserStatistics.user_id == user_id,
-            UserStatistics.variant_id == variant_id,
-            UserStatistics.end_time.is_(None)
-        )
-    )
-    stats = result.scalar()
-    
-    if not stats:
-        # Создаем новую запись, если нет активной
+        # Если статистики нет, создаем новую
         stats = UserStatistics(
             user_id=user_id,
             variant_id=variant_id,
-            start_time=datetime.now()
+            start_time=datetime.now(),
+            end_time=datetime.now(),
+            task_results=json.dumps(task_results)
         )
         db.add(stats)
-        await db.flush()
+    else:
+        # Обновляем существующую статистику
+        stats.task_results = json.dumps(task_results)
+        stats.end_time = datetime.now()
     
-    # Обновляем статистику
-    task_results = json.loads(stats.task_results) if stats.task_results else {}
-    task_id_str = str(task_id)
+    # Помечаем вариант как завершенный
+    completed = CompletedVariant(
+        user_id=user_id,
+        variant_id=variant_id
+    )
+    db.add(completed)
     
-    if task_id_str not in task_results:
-        stats.completed_tasks += 1
-    
-    if passed and (task_id_str not in task_results or not task_results[task_id_str]):
-        stats.correct_tasks += 1
-    
-    task_results[task_id_str] = passed
-    stats.task_results = json.dumps(task_results)
-    
+    # Сохраняем изменения
     await db.commit()
+    
+    return {"status": "success"}
+    
+    # # Создаем запись в статистике
+    # stats = UserStatistics(
+    #     user_id=user_id,
+    #     variant_id=variant_id,
+    #     start_time=datetime.now()
+    # )
+    # db.add(stats)
+    # await db.commit()
+    # await db.refresh(stats)
+    
+    # return stats
+
+# @app.post("/finish_variant", response_model=UserStatisticsModel)
+# async def finish_variant(user_id: str = Body(...), variant_id: int = Body(...), db: AsyncSession = Depends(get_db)):
+#     """Завершает вариант для пользователя"""
+#     # Получаем текущую статистику
+#     result = await db.execute(
+#         select(UserStatistics)
+#         .where(
+#             UserStatistics.user_id == user_id,
+#             UserStatistics.variant_id == variant_id,
+#             UserStatistics.end_time.is_(None)
+#         )
+#     )
+#     stats = result.scalar()
+    
+#     if not stats:
+#         raise HTTPException(status_code=404, detail="Активный вариант не найден")
+    
+#     # Обновляем статистику
+#     now = datetime.now()
+#     stats.end_time = now
+#     stats.total_time = (now - stats.start_time).total_seconds()
+#     await db.commit()
+#     await db.refresh(stats)
+    
+    # return stats
+
+# @app.get("/statistics/{user_id}/{variant_id}", response_model=UserStatisticsModel)
+# async def get_statistics(user_id: str, variant_id: int, db: AsyncSession = Depends(get_db)):
+#     """Получает статистику пользователя по варианту"""
+#     result = await db.execute(
+#         select(UserStatistics)
+#         .where(
+#             UserStatistics.user_id == user_id,
+#             UserStatistics.variant_id == variant_id
+#         )
+#         .order_by(UserStatistics.start_time.desc())
+#         .limit(1)
+#     )
+#     stats = result.scalar()
+    
+#     if not stats:
+#         raise HTTPException(status_code=404, detail="Статистика не найдена")
+    
+#     return stats
+
+# Вспомогательные функции
+
+# async def update_statistics(db: AsyncSession, user_id: str, variant_id: int, task_id: int, passed: bool):
+#     """Обновляет статистику пользователя"""
+#     # Получаем текущую статистику
+#     result = await db.execute(
+#         select(UserStatistics)
+#         .where(
+#             UserStatistics.user_id == user_id,
+#             UserStatistics.variant_id == variant_id,
+#             UserStatistics.end_time.is_(None)
+#         )
+#     )
+#     stats = result.scalar()
+    
+#     if not stats:
+#         # Создаем новую запись, если нет активной
+#         stats = UserStatistics(
+#             user_id=user_id,
+#             variant_id=variant_id,
+#             start_time=datetime.now()
+#         )
+#         db.add(stats)
+#         await db.flush()
+    
+#     # Обновляем статистику
+#     task_results = json.loads(stats.task_results) if stats.task_results else {}
+#     task_id_str = str(task_id)
+    
+#     if task_id_str not in task_results:
+#         stats.completed_tasks += 1
+    
+#     if passed and (task_id_str not in task_results or not task_results[task_id_str]):
+#         stats.correct_tasks += 1
+    
+#     task_results[task_id_str] = passed
+#     stats.task_results = json.dumps(task_results)
+    
+#     await db.commit()
 
 @app.on_event("startup")
 async def startup_event():

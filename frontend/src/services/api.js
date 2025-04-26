@@ -95,3 +95,44 @@ export const check_answer = async (variant_id, answers) => {
   return await response.json();
 
 }
+
+// Получение нерешенных вариантов для пользователя
+export const getUserVariants = async (userId) => {
+  try {
+    const response = await fetch(`${API_URL}/user/${userId}/variants`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch user variants');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Get user variants error:', error);
+    throw error;
+  }
+};
+
+// Сохранение результатов пользователя
+export const saveUserResults = async (userId, variantId, taskResults) => {
+  try {
+    const response = await fetch(`${API_URL}/user/${userId}/results`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        variant_id: variantId,
+        task_results: taskResults
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to save user results');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Save user results error:', error);
+    throw error;
+  }
+};

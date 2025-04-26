@@ -1,4 +1,10 @@
-import { getVariants as fetchVariants, getTasks, check_answer } from './api';
+import { 
+  getVariants as fetchVariants, 
+  getTasks, 
+  check_answer, 
+  getUserVariants as fetchUserVariants,
+  saveUserResults
+} from './api';
 
 // Локальные данные для демонстрации (при отсутствии связи с API)
 const demoVariants = [
@@ -49,6 +55,27 @@ const demoTasks = {
     },
     // Другие задачи для второго варианта...
   ]
+};
+
+// Получение нерешенных вариантов для пользователя
+export const getUserVariants = async (userId) => {
+  try {
+    const variants = await fetchUserVariants(userId);
+    return variants;
+  } catch (error) {
+    console.error('Error fetching user variants, using demo data:', error);
+    return demoVariants;
+  }
+};
+
+// Сохранение результатов пользователя
+export const saveResults = async (userId, variantId, taskResults) => {
+  try {
+    return await saveUserResults(userId, variantId, taskResults);
+  } catch (error) {
+    console.error('Error saving user results:', error);
+    return { status: 'error', message: error.message };
+  }
 };
 
 // Получение всех вариантов
