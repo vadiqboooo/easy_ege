@@ -1,6 +1,6 @@
 
 import json
-
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Union
 
@@ -135,7 +135,7 @@ class UserStatisticsModel(BaseModel):
         orm_mode = True
 
 # Инициализация приложения FastAPI
-app = FastAPI(title="Python Code Executor API")
+app = FastAPI(title="Python Code Executor API", lifespan=lifespan)
 
 # Подключаем папку со статикой
 app.mount("/img", StaticFiles(directory="/img"), name="img")
@@ -417,8 +417,9 @@ async def save_user_results(
     
 #     await db.commit()
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Код при запуске
     await initialize_db()
     print("Database initialized")
 
