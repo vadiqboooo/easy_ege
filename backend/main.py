@@ -152,7 +152,9 @@ async def lifespan(app: FastAPI):
 # Инициализация приложения FastAPI
 app = FastAPI(title="Python Code Executor API",
             lifespan=lifespan,
-            openapi_version="3.1.0")
+            version="1.0.0",
+            docs_url="/docs",  # URL для Swagger UI (по умолчанию /docs)
+            redoc_url="/redoc")
 
 # Подключаем папку со статикой
 app.mount("/img", StaticFiles(directory="/img"), name="img")
