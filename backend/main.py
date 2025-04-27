@@ -151,6 +151,7 @@ async def lifespan(app: FastAPI):
 
 # Инициализация приложения FastAPI
 app = FastAPI(title="Python Code Executor API",
+            docs_url="/api/docs",
             lifespan=lifespan)
 
 # Подключаем папку со статикой
