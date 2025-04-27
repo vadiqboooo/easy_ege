@@ -112,10 +112,11 @@ export const getUserVariants = async (userId) => {
   }
 };
 
-// Сохранение результатов п1ользователя
 export const saveUserResults = async (userId, variantId, taskResults) => {
-  try {
-    console.log(userId, variantId, taskResults);
+  try { 
+    ///12
+    // Make sure taskResults is in the format the API expects
+    // (a dictionary of string task IDs to boolean values)
     const response = await fetch(`${API_URL}/user/${userId}/results`, {
       method: 'POST',
       headers: {
@@ -123,12 +124,13 @@ export const saveUserResults = async (userId, variantId, taskResults) => {
       },
       body: JSON.stringify({
         variant_id: variantId,
-        task_results: taskResults
-      }),
+        task_results: taskResults 
+      }), 
     });
     
     if (!response.ok) {
-      throw new Error('Failed to save user results');
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to save user results');
     }
     
     return await response.json();
