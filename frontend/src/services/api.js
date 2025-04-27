@@ -113,10 +113,22 @@ export const getUserVariants = async (userId) => {
 };
 
 export const saveUserResults = async (userId, variantId, taskResults) => {
-  try { 
-    ///12
-    // Make sure taskResults is in the format the API expects
-    // (a dictionary of string task IDs to boolean values)
+  try {
+    // Ensure taskResults is in the correct format expected by the backend
+    // Convert it to a simple object with string keys and boolean values if needed
+    const formattedTaskResults = {}; 
+    
+    // If taskResults is already an object of task IDs to booleans, use it directly
+    // Otherwise, format it according to your needs
+    Object.keys(taskResults).forEach(taskId => {
+      formattedTaskResults[taskId.toString()] = Boolean(taskResults[taskId]);
+    });
+    
+    console.log("Sending data:", {
+      variant_id: variantId,
+      task_results: formattedTaskResults
+    });
+    
     const response = await fetch(`${API_URL}/user/${userId}/results`, {
       method: 'POST',
       headers: {
@@ -124,13 +136,14 @@ export const saveUserResults = async (userId, variantId, taskResults) => {
       },
       body: JSON.stringify({
         variant_id: variantId,
-        task_results: taskResults 
-      }), 
+        task_results: formattedTaskResults
+      }),
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to save user results');
+      const errorText = await response.text();
+      console.error('Server response:', errorText);
+      throw new Error(`Failed to save user results: ${response.status} ${response.statusText}`);
     }
     
     return await response.json();

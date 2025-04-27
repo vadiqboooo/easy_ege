@@ -290,11 +290,21 @@ async def start_variant(user_id: str = Body(...), variant_id: int = Body(...), d
 @app.post("/user/{user_id}/results")
 async def save_user_results(
     user_id: str, 
-    variant_id: int = Body(...), 
-    task_results: Dict[str, bool] = Body(...),
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     """Сохраняет результаты пользователя и помечает вариант как решенный"""
+    
+    # Get the raw request body for debugging
+    body = await request.json()
+    print("Received request body:", body)
+    
+    # Extract the fields manually
+    variant_id = body.get('variant_id')
+    task_results = body.get('task_results', {})
+    
+    if not variant_id:
+        raise HTTPException(status_code=422, detail="variant_id is required")
     
     # Находим или создаем статистику пользователя
     result = await db.execute(
@@ -332,7 +342,6 @@ async def save_user_results(
     await db.commit()
     
     return {"status": "success"}
-    
     # # Создаем запись в статистике
     # stats = UserStatistics(
     #     user_id=user_id,
