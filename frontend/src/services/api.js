@@ -112,9 +112,10 @@ export const getUserVariants = async (userId) => {
   }
 };
 
-// Сохранение результатов пользователя
+// Сохранение результатов п1ользователя
 export const saveUserResults = async (userId, variantId, taskResults) => {
   try {
+    console.log(userId, variantId, taskResults);
     const response = await fetch(`${API_URL}/user/${userId}/results`, {
       method: 'POST',
       headers: {
