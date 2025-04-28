@@ -345,16 +345,30 @@ async def save_user_results(
 
 @app.delete('/delete/{user_id}/{var_id}')
 async def delete_complite_variant(user_id: str, var_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.scalar(select(CompletedVariant).where(
-        and_(CompletedVariant.user_id == user_id, CompletedVariant.variant_id == var_id)
-    ))
-
-    if result:
-        db.delete(result)
-        await db.commit()
-        return {"status": f"success delete complited varint {var_id} for user {user_id}"}
-    else:
-        return {"status": f"user or varind not found"}
+    try:
+        # Более оптимальный запрос для удаления без предварительного выбора
+        result = await db.execute(
+            delete(CompletedVariant)
+            .where(
+                and_(
+                    CompletedVariant.user_id == user_id,
+                    CompletedVariant.variant_id == var_id
+                )
+            )
+            .returning(CompletedVariant)
+        )
+        
+        deleted_row = result.scalar_one_or_none()
+        
+        if deleted_row:
+            await db.commit()
+            return {"status": f"success delete completed variant {var_id} for user {user_id}"}
+        else:
+            return {"status": f"user or variant not found"}, 404
+            
+    except Exception as e:
+        await db.rollback()
+        return {"status": f"error: {str(e)}"}, 500
 
 
     # # Создаем запись в статистике
