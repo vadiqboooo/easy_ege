@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Depends, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float,ForeignKey, UniqueConstraint, and_
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float,ForeignKey, UniqueConstraint, and_, delete
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.future import select
