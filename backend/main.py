@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Depends, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float,ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float,ForeignKey, UniqueConstraint, and_
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.future import select
@@ -342,6 +342,21 @@ async def save_user_results(
     await db.commit()
     
     return {"status": "success"}
+
+@app.delete('/delete/{user_id}/{var_id}')
+async def delete_complite_variant(user_id: str, var_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.scalar(select(CompletedVariant).where(
+        and_(CompletedVariant.user_id == user_id, CompletedVariant.variant_id == var_id)
+    ))
+
+    if result:
+        db.delete(result)
+        await db.commit()
+        return {"status": f"success delete complited varint {var_id} for user {user_id}"}
+    else:
+        return {"status": f"user or varind not found"}
+
+
     # # Создаем запись в статистике
     # stats = UserStatistics(
     #     user_id=user_id,
