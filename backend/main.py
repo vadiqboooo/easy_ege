@@ -217,7 +217,7 @@ async def get_user_variants(user_id: str, db: AsyncSession = Depends(get_db)):
     completed_variants_ids = [row[0] for row in completed]
     
     # Фильтруем только нерешенные варианты
-    variants = [v for v in all_variants if v.id not in completed_variants_ids]
+    variants = [v for v in all_variants if v.id in completed_variants_ids]
     return variants
 
 @app.post("/check-answers")

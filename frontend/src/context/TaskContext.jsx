@@ -40,7 +40,7 @@ export const TaskProvider = ({ children }) => {
         
         // Если пользователь авторизован, загружаем его завершенные варианты
         if (user) {
-          const completed = await getUserCompletedVariants(user.id);
+          const completed = await getUserVariants(user.id);
           setCompletedVariants(completed);
         }
         
