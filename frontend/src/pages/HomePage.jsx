@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTaskContext } from '../context/TaskContext';
 
 const HomePage = () => {
-  const { variants, selectVariant, user } = useTaskContext();
-  const [completedVariants, setCompletedVariants] = useState([]);
+  const { variants, selectVariant, user, completedVariants  } = useTaskContext();
   const navigate = useNavigate();
 
   const handleVariantSelect = async (variantId) => {

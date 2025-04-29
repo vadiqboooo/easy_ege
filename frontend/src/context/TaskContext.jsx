@@ -9,6 +9,7 @@ export const TaskProvider = ({ children }) => {
 
   const [user, setUser] = useState(null);
   const [variants, setVariants] = useState([]);
+  const [completedVariants, setCompletedVariants] = useState([]);
   const [currentVariant, setCurrentVariant] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
@@ -37,14 +38,13 @@ export const TaskProvider = ({ children }) => {
       try {
         // Загружаем все варианты
         const allVariants = await getVariants();
+        setVariants(allVariants);
         
         // Если пользователь авторизован, загружаем его завершенные варианты
         if (user) {
           const completed = await getUserVariants(user.id);
           setCompletedVariants(completed);
         }
-        
-        setVariants(allVariants);
       } catch (error) {
         console.error('Failed to load data:', error);
       }
@@ -180,6 +180,7 @@ export const TaskProvider = ({ children }) => {
 
   const value = {
     variants,
+    completedVariants,
     currentVariant,
     tasks,
     currentTaskIndex,
