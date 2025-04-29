@@ -25,7 +25,7 @@ const HomePage = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {variants.map((variant) => {
         const isCompleted = isVariantCompleted(variant.id);
-        
+        console.log(isCompleted);
         return (
           <div 
             key={variant.id} 
