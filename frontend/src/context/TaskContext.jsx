@@ -33,22 +33,23 @@ export const TaskProvider = ({ children }) => {
 
   // Загрузка вариантов при инициализации
   useEffect(() => {
-    const loadVariants = async () => {
+    const loadData = async () => {
       try {
-        // Если пользователь авторизован через Telegram, загружаем только его нерешенные варианты
+        // Загружаем все варианты
+        const allVariants = await getVariants();
+        
+        // Если пользователь авторизован, загружаем его завершенные варианты
         if (user) {
-          const variantsData = await getUserVariants(user.id);
-          setVariants(variantsData);
-        } else {
-          // Иначе загружаем все варианты (для тестирования)
-          const variantsData = await getVariants();
-          setVariants(variantsData);
+          const completed = await getUserCompletedVariants(user.id);
+          setCompletedVariants(completed);
         }
+        
+        setVariants(allVariants);
       } catch (error) {
-        console.error('Failed to load variants:', error);
+        console.error('Failed to load data:', error);
       }
     };
-    loadVariants();
+    loadData();
   }, [user]);
 
 
